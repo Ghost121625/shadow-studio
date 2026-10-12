@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShadowStudio - Minecraft Plugin Development</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #0d0e12;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Background Setup */
+    .bg-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('logo.png') center/cover no-repeat;
+      filter: blur(12px) brightness(0.25);
+      transform: scale(1.05);
+      z-index: 1;
+    }
+
+    #particles-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Layout Containers */
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 480px;
+      margin: 2rem auto;
+      transition: all 0.3s ease;
+    }
+
+    .glass-card {
+      background: rgba(18, 18, 24, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 143, 56, 0.3);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 
+                  0 0 30px rgba(212, 143, 56, 0.15);
+      text-align: center;
+    }
+
+    /* Header & Logo */
+    .logo-container {
+      margin-bottom: 1.2rem;
+      display: inline-block;
+    }
+
+    .logo-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(212, 143, 56, 0.4);
+      border: 1px solid rgba(212, 143, 56, 0.4);
+    }
+
+    .title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #ffffff 30%, #f3a646 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 0.4rem;
+    }
+
+    .description {
+      font-size: 0.8rem;
+      color: #a0aec0;
+      margin-bottom: 2rem;
+      line-height: 1.4;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #d48f38 0%, #a6631e 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(212, 143, 56, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 143, 56, 0.5);
+      background: linear-gradient(135deg, #e59f48 0%, #b87228 100%);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(212, 143, 56, 0.4);
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    /* Info Page Styling */
+    .info-container {
+      display: none;
+      max-width: 650px;
+      text-align: left;
+    }
+
+    .info-container.active {
+      display: block;
+    }
+
+    .main-container.hidden {
+      display: none;
+    }
+
+    .info-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 1.4rem 0 0.4rem 0;
+    }
+
+    .info-text {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .info-text strong {
+      color: #ffffff;
+    }
+
+    .highlight {
+      color: #f3a646;
+    }
+
+    ol.steps {
+      margin-left: 1.2rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.8;
+    }
+
+    code {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #f3a646;
+      border: 1px solid rgba(212, 143, 56, 0.2);
+    }
+
+    .code-box {
+      background: rgba(5, 5, 8, 0.9);
+      border: 1px solid rgba(212, 143, 56, 0.25);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin: 0.8rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a0aec0;
+    }
+
+    .footer-text {
+      font-size: 0.75rem;
+      color: #718096;
+      margin-top: 1.8rem;
+      text-align: center;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .action-row .btn {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Image & Particles -->
+  <div class="bg-image"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Hauptseite (Home) -->
+  <div class="container main-container" id="homePage">
+    <div class="glass-card">
+      <div class="logo-container">
+        <img src="logo.png" alt="ShadowStudio Logo" class="logo-img">
+      </div>
+      <h1 class="title">ASTRAL<span class="highlight">STUDIO</span></h1>
+      <p class="subtitle">Minecraft plugin development, built for your server.</p>
+      <p class="description">High quality, easy to use plugins with free releases and quick support.</p>
+      
+      <div class="btn-group">
+        <a href="https://builtbybit.com/creators/shdowstudios.834748/" target="_blank" class="btn btn-primary">Plugins</a>
+        <button class="btn btn-secondary" onclick="togglePages()">More Information</button>
+        <a href="https://discord.gg/Z3ftyxBt5t" target="_blank" class="btn btn-secondary">Discord</a>
+      </div>
+
+      <div class="footer-text">
+        © ShadowStudio - All Rights Reserved
+      </div>
+    </div>
+  </div>
+
+  <!-- Infoseite (More Information) -->
+  <div class="container info-container" id="infoPage">
+    <div class="glass-card">
+      <h2 class="info-title">Welcome to ShadowStudio <span class="highlight">✦</span></h2>
+      <p class="info-text">
+        Thanks for joining our plugin development community. ShadowStudio provides Minecraft plugins and the information you need to get started.
+      </p>
+
+      <h3 class="section-title">Server Information</h3>
+      <p class="info-text">
+        <strong>ShadowStudio</strong> is a plugin development server that offers Minecraft plugins. Our plugins are <strong>100% FREE</strong> and will forever be free.
+      </p>
+
+      <h3 class="section-title">Why choose SS Plugins</h3>
+      <p class="info-text">
+        Our plugins are high-quality projects that are easy to use. We offer <strong>Economy</strong> plugins similar to the big <strong>DonutSMP</strong> experience, along with quick support that is available almost 24/7.
+      </p>
+
+      <h3 class="section-title">How to use Shadow Plugins</h3>
+      <p class="info-text">
+        Using SS Plugins is easier than you might think. Follow these steps and you can set up your server in seconds:
+      </p>
+
+      <ol class="steps">
+        <li>Download the plugin you want to use from our <a href="https://builtbybit.com/creators/shdowstudios.834748/" target="_blank" style="color: #f3a646; text-decoration: underline;">BuiltByBit page</a>.</li>
+        <li>Upload the plugin <code>.jar</code> to your Minecraft server's <code>plugins</code> folder.</li>
+        <li>Restart your server. You should then see a new <code>ShadowXXX</code> folder generated.</li>
+        <li>Open the Shadow folder and go to <code>config.yml</code> or <code>license.yml</code>. Paste the license key in the correct location. All Shadow Plugins use one unique license key.</li>
+      </ol>
+
+      <div class="code-box">
+        key: "THE-LICENSE-KEY-HERE"
+      </div>
+
+      <p class="info-text" style="font-size: 0.8rem; margin-top: 0.5rem;">
+        5. Finally, restart your server once again and the plugin should load.
+      </p>
+      <p class="info-text" style="font-size: 0.8rem; margin-top: 0.5rem; color: #a0aec0;">
+        If you have any problems or questions about one of our plugins, don't hesitate to ask us.
+      </p>
+
+      <h3 class="section-title">Shadow Staff Team & Security</h3>
+      <p class="info-text" style="font-size: 0.8rem;">
+        Be careful of scams. People claiming to have a <strong>FREE</strong> version of a <strong>PAID</strong> plugin are certainly scammers. Do not download files from random people or sketchy websites.
+      </p>
+
+      <p class="info-text" style="margin-top: 1.2rem; font-size: 0.85rem; text-align: center;">
+        Thanks for using our plugins and supporting ShadowStudio. Hope you enjoy them. <span class="highlight">✦</span>
+      </p>
+
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="togglePages()">Back to Home</button>
+        <a href="https://discord.gg/Z3ftyxBt5t" target="_blank" class="btn btn-secondary">Join Discord</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Umschalten zwischen Hauptseite & Infoseite
+    function togglePages() {
+      const home = document.getElementById('homePage');
+      const info = document.getElementById('infoPage');
+
+      if (home.classList.contains('hidden')) {
+        home.classList.remove('hidden');
+        info.classList.remove('active');
+      } else {
+        home.classList.add('hidden');
+        info.classList.add('active');
+      }
+    }
+
+    // Partikel-Effekt im Hintergrund
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const particles = [];
+    const particleCount = 40;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 2 + 0.5,
+        alpha: Math.random() * 0.6 + 0.2,
+        speedX: (Math.random() - 0.5) * 0.3,
+        speedY: -Math.random() * 0.4 - 0.1
+      });
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+
+        if (p.y < 0) p.y = canvas.height;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(243, 166, 70, ${p.alpha})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(243, 166, 70, 0.8)';
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+  </script>
+</body>
+</html>
